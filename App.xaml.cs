@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace BaStartupSounds
+namespace BlueArchiveStartupSounds
 {
     public partial class App : Application
     {

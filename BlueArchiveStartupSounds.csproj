@@ -29,7 +29,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="AppIcon.ico" />
+    <Compile Remove="AssemblyInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="AppIcon.ico" />
+    <Resource Include="AssemblyInfo.cs" />
   </ItemGroup>
 
   <ItemGroup>

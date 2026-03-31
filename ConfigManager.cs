@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Win32;
 
-namespace BaStartupSounds
+namespace BlueArchiveStartupSounds
 {
     public static class ConfigManager
     {

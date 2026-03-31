@@ -1,4 +1,4 @@
-<Window x:Class="BaStartupSounds.MainWindow"
+<Window x:Class="BlueArchiveStartupSounds.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -6,10 +6,19 @@
         xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
         mc:Ignorable="d"
-        Title="Blue Archive 开机音效配置" Height="591" Width="620"
+        Title="Blue Archive 开机音效配置" Height="610" Width="620"
         ResizeMode="CanMinimize"
         WindowStartupLocation="CenterScreen">
-    <Grid Margin="15,15,15,0" Height="557" VerticalAlignment="Top">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="文件">
+                <MenuItem Header="退出" Click="ExitMenuItem_Click"/>
+            </MenuItem>
+            <MenuItem Header="关于">
+                <MenuItem Header="关于本程序" Click="AboutMenuItem_Click"/>
+            </MenuItem>
+        </Menu>
+        <Grid Margin="15,15,15,0" Height="552">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -141,4 +150,5 @@
             <Button x:Name="TestButton" Content="测试播放" Width="100" Height="30" Click="TestPlay"/>
         </StackPanel>
     </Grid>
+    </DockPanel>
 </Window>

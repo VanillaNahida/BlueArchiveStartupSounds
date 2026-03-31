@@ -4,7 +4,7 @@ using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using NAudio.Vorbis;
 
-namespace BaStartupSounds
+namespace BlueArchiveStartupSounds
 {
     public class AudioPlayer : IDisposable
     {
@@ -519,7 +519,7 @@ namespace BaStartupSounds
             Console.WriteLine(line);
             try
             {
-                var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BaStartupSounds.log");
+                var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BlueArchiveStartupSounds.log");
                 File.AppendAllText(logPath, line + Environment.NewLine);
             }
             catch

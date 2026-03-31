@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using Microsoft.Win32;
 using Forms = System.Windows.Forms;
 
-namespace BaStartupSounds
+namespace BlueArchiveStartupSounds
 {
     public partial class MainWindow : Window
     {
@@ -195,6 +195,17 @@ namespace BaStartupSounds
                 TestButton.Content = "测试播放";
                 TestButton.IsEnabled = true;
             });
+        }
+
+        private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void AboutMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var aboutWindow = new AboutWindow();
+            aboutWindow.ShowDialog();
         }
 
         protected override void OnClosed(EventArgs e)

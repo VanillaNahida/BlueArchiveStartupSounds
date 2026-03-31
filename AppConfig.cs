@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace BaStartupSounds
+namespace BlueArchiveStartupSounds
 {
     public class AppConfig
     {
