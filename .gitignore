@@ -1,0 +1,65 @@
+# Visual Studio
+.vs/
+bin/
+obj/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+build/
+*.dll
+*.exe
+*.pdb
+
+# NuGet
+packages/
+.nuget/
+project.lock.json
+
+# IDE
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Test results
+TestResults/
+
+# Coverage reports
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories and files
+.idea/
+.vscode/
+*.code-workspace
+
+# Build artifacts
+bin/Debug/
+bin/Release/
+obj/Debug/
+obj/Release/
+
+bin/
+LockEngine/
+voice/
+Properties/

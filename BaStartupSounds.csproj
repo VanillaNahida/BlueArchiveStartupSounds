@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>AppIcon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SignAssembly>False</SignAssembly>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <FileVersion>1.0.0</FileVersion>
+    <Title>蔚蓝档案开机语音</Title>
+    <Authors>香草味的纳西妲喵（VanillaNahida）</Authors>
+    <Company>香草味的纳西妲喵（VanillaNahida）</Company>
+    <Product>蔚蓝档案开机语音</Product>
+    <Description></Description>
+    <Copyright>香草味的纳西妲喵（VanillaNahida）</Copyright>
+    <AssemblyName>BlueArchiveStartupSounds</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="AppIcon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
+    <PackageReference Include="NAudio.Lame" Version="1.1.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
+  </ItemGroup>
+
+</Project>
