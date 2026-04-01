@@ -153,11 +153,11 @@ namespace BlueArchiveStartupSounds
             }
             catch (OperationCanceledException)
             {
-                LogMessage("播放任务已取消。");
+                Console.WriteLine("播放任务已取消。");
             }
             catch (Exception ex)
             {
-                LogMessage($"播放任务异常: {ex}");
+                Console.WriteLine($"播放任务异常: {ex}");
             }
             finally
             {
@@ -411,12 +411,12 @@ namespace BlueArchiveStartupSounds
         private void KillProcess(string processName)
         {
             string nameOnly = Path.GetFileNameWithoutExtension(processName);
-            LogMessage($"开始尝试关闭进程: {processName}");
+            Console.WriteLine($"开始尝试关闭进程: {processName}");
 
             var initialProcesses = Process.GetProcessesByName(nameOnly);
             if (initialProcesses.Length == 0)
             {
-                LogMessage($"未找到进程: {nameOnly}");
+                Console.WriteLine($"未找到进程: {nameOnly}");
                 return;
             }
 
@@ -426,39 +426,39 @@ namespace BlueArchiveStartupSounds
                 {
                     try
                     {
-                        LogMessage($"原生Kill尝试: {p.ProcessName} (PID: {p.Id})");
+                        Console.WriteLine($"原生Kill尝试: {p.ProcessName} (PID: {p.Id})");
                         p.Kill(entireProcessTree: true);
                         var exited = p.WaitForExit(3000);
-                        LogMessage(exited
+                        Console.WriteLine(exited
                             ? $"原生Kill成功: PID {p.Id}"
                             : $"原生Kill超时: PID {p.Id}");
                     }
                     catch (Exception ex)
                     {
-                        LogMessage($"原生Kill失败: PID {p.Id}, 错误: {ex.Message}");
+                        Console.WriteLine($"原生Kill失败: PID {p.Id}, 错误: {ex.Message}");
                     }
                 }
 
                 // 原生Kill后再次校验，如仍存在则使用taskkill兜底
                 if (Process.GetProcessesByName(nameOnly).Length > 0)
                 {
-                    LogMessage($"原生Kill后仍存在 {nameOnly}，执行taskkill兜底");
+                    Console.WriteLine($"原生Kill后仍存在 {nameOnly}，执行taskkill兜底");
                     RunTaskKill(processName);
                 }
             }
             catch (Exception ex)
             {
-                LogMessage($"KillProcess流程异常: {ex.Message}");
+                Console.WriteLine($"KillProcess流程异常: {ex.Message}");
             }
 
             var remaining = Process.GetProcessesByName(nameOnly);
             if (remaining.Length == 0)
             {
-                LogMessage($"进程已成功关闭: {nameOnly}");
+                Console.WriteLine($"进程已成功关闭: {nameOnly}");
             }
             else
             {
-                LogMessage($"进程仍在运行: {nameOnly}, 数量: {remaining.Length}");
+                Console.WriteLine($"进程仍在运行: {nameOnly}, 数量: {remaining.Length}");
             }
         }
 
@@ -469,7 +469,7 @@ namespace BlueArchiveStartupSounds
                 var imageName = processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
                     ? processName
                     : $"{Path.GetFileNameWithoutExtension(processName)}.exe";
-                LogMessage($"尝试使用taskkill命令关闭进程: {imageName}");
+                Console.WriteLine($"尝试使用taskkill命令关闭进程: {imageName}");
                 
                 var psi = new ProcessStartInfo
                 {
@@ -491,42 +491,42 @@ namespace BlueArchiveStartupSounds
                 
                 if (process?.ExitCode == 0)
                 {
-                    LogMessage($"taskkill成功关闭进程: {imageName}");
+                    Console.WriteLine($"taskkill成功关闭进程: {imageName}");
                     if (!string.IsNullOrEmpty(output))
                     {
-                        LogMessage($"taskkill输出: {output.Trim()}");
+                        Console.WriteLine($"taskkill输出: {output.Trim()}");
                     }
                 }
                 else
                 {
-                    LogMessage($"taskkill关闭进程失败，退出代码: {process?.ExitCode}");
+                    Console.WriteLine($"taskkill关闭进程失败，退出代码: {process?.ExitCode}");
                     if (!string.IsNullOrEmpty(error))
                     {
-                        LogMessage($"taskkill错误: {error.Trim()}");
+                        Console.WriteLine($"taskkill错误: {error.Trim()}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogMessage($"执行taskkill命令时出错: {ex.Message}");
+                Console.WriteLine($"执行taskkill命令时出错: {ex.Message}");
             }
         }
 
-        private void LogMessage(string message)
-        {
-            var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}";
-            Debug.WriteLine(line);
-            Console.WriteLine(line);
-            try
-            {
-                var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BlueArchiveStartupSounds.log");
-                File.AppendAllText(logPath, line + Environment.NewLine);
-            }
-            catch
-            {
-                // 日志写入失败不影响主流程
-            }
-        }
+        // private void LogMessage(string message)
+        // {
+        //     var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}";
+        //     Debug.WriteLine(line);
+        //     Console.WriteLine(line);
+        //     try
+        //     {
+        //         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BlueArchiveStartupSounds.log");
+        //         File.AppendAllText(logPath, line + Environment.NewLine);
+        //     }
+        //     catch
+        //     {
+        //         // 日志写入失败不影响主流程
+        //     }
+        // }
 
         private async Task WaitForLockEngineAsync(CancellationToken cancellationToken)
         {
