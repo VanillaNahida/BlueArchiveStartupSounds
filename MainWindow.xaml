@@ -139,7 +139,7 @@
         <GroupBox Header="其他设置" Grid.Row="3" Padding="5" Margin="0,10,0,0">
             <StackPanel>
                 <CheckBox x:Name="KillLockEngineCheckBox" Content="进入桌面时自动关闭影片" Margin="0,3"/>
-                <CheckBox x:Name="WaitForLockEngineCheckBox" Content="是否等待影片加载后播放音乐和语音" Margin="0,3"/>
+                <CheckBox x:Name="WaitForLockEngineCheckBox" Content="是否等待影片加载后播放音乐和语音（推荐勾选，这样背景视频和音乐会同步播放）" Margin="0,3"/>
                 <CheckBox x:Name="AutoStartVoiceCheckBox" Content="开机自动播放语音" Margin="0,3"/>
                 <CheckBox x:Name="AutoStartVideoCheckBox" Content="开机自动播放影片" Margin="0,3"/>
             </StackPanel>

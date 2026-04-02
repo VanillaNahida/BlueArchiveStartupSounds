@@ -147,7 +147,6 @@ namespace BlueArchiveStartupSounds
   <Triggers>
     <BootTrigger>
       <Enabled>true</Enabled>
-      <Delay>PT30S</Delay>
     </BootTrigger>
   </Triggers>
   <Principals>

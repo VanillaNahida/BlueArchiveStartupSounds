@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Navigation;
 
@@ -9,6 +10,13 @@ namespace BlueArchiveStartupSounds
         public AboutWindow()
         {
             InitializeComponent();
+            LoadVersionInfo();
+        }
+
+        private void LoadVersionInfo()
+        {
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            VersionTextBlock.Text = version?.ToString() ?? "未知版本";
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)

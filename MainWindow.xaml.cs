@@ -18,6 +18,25 @@ namespace BlueArchiveStartupSounds
             _audioPlayer = new AudioPlayer();
             _audioPlayer.PlaybackCompleted += OnPlaybackCompleted;
             LoadConfigToUi();
+            CheckLockEngineFolder();
+        }
+
+        private void CheckLockEngineFolder()
+        {
+            var workDir = AppDomain.CurrentDomain.BaseDirectory;
+            var lockEngineFolder = Path.Combine(workDir, "LockEngine");
+            var lockEngineExe = Path.Combine(lockEngineFolder, "LockEngine.exe");
+            
+            if (!Directory.Exists(lockEngineFolder))
+            {
+                MessageBox.Show("未检测到 LockEngine 文件夹，开机自动播放影片功能不可用。\n\n如需使用此功能，请确保 LockEngine 文件夹存在于程序目录下。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                AutoStartVideoCheckBox.IsEnabled = false;
+            }
+            else if (!File.Exists(lockEngineExe))
+            {
+                MessageBox.Show("未检测到 LockEngine.exe 文件，开机自动播放影片功能不可用。\n\n如需使用此功能，请确保 LockEngine.exe 存在于 LockEngine 文件夹中。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
+                AutoStartVideoCheckBox.IsEnabled = false;
+            }
         }
 
         private void LoadConfigToUi()
