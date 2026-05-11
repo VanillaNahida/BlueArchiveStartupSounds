@@ -24,6 +24,10 @@ C#编写。</p>
 </p>
 
 # 使用方法
+> [!TIP]
+> 若出现锁屏不显示影片，请尝试勾选Win设置中的“在登录屏幕上显示锁屏界面背景图片”
+> 可在桌面右键点击“个性化” > “锁屏界面”跳转到对应页面
+> <p align="center"><img width="600" alt="image" src="https://github.com/user-attachments/assets/2139a130-efd1-45d7-809d-8d0ecb75f202" /></p>
 1. 前往[Release](https://github.com/VanillaNahida/BlueArchiveStartupSounds/releases)下载最新的程序包，将其放在一个目录下双击运行，简单配置一下即可。
 
 
