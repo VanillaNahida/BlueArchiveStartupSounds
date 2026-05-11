@@ -9,8 +9,8 @@
     <ApplicationIcon>AppIcon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <SignAssembly>False</SignAssembly>
-    <AssemblyVersion>1.0.1</AssemblyVersion>
-    <FileVersion>1.0.1</FileVersion>
+    <AssemblyVersion>1.0.2.0</AssemblyVersion>
+    <FileVersion>1.0.2.0</FileVersion>
     <Title>蔚蓝档案开机语音</Title>
     <Authors>香草味的纳西妲喵（VanillaNahida）</Authors>
     <Company>香草味的纳西妲喵（VanillaNahida）</Company>

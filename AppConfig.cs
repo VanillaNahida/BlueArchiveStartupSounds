@@ -37,6 +37,9 @@ namespace BlueArchiveStartupSounds
         [JsonPropertyName("wait_for_lockengine")]
         public bool WaitForLockEngine { get; set; } = false;
 
+        [JsonPropertyName("log_to_file")]
+        public bool LogToFile { get; set; } = false;
+
         public static AppConfig GetDefault()
         {
             return new AppConfig();
@@ -56,7 +59,8 @@ namespace BlueArchiveStartupSounds
                 BgmVolume = BgmVolume,
                 VoiceVolume = VoiceVolume,
                 KillLockEngine = KillLockEngine,
-                WaitForLockEngine = WaitForLockEngine
+                WaitForLockEngine = WaitForLockEngine,
+                LogToFile = LogToFile
             };
         }
     }

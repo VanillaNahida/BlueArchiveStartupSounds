@@ -55,6 +55,7 @@ namespace BlueArchiveStartupSounds
 
             KillLockEngineCheckBox.IsChecked = _config.KillLockEngine;
             WaitForLockEngineCheckBox.IsChecked = _config.WaitForLockEngine;
+            LogToFileCheckBox.IsChecked = _config.LogToFile;
             AutoStartVoiceCheckBox.IsChecked = ConfigManager.TaskExists(ConfigManager.TaskName);
             AutoStartVideoCheckBox.IsChecked = ConfigManager.RegistryRunExists(ConfigManager.RegValueName);
         }
@@ -142,7 +143,8 @@ namespace BlueArchiveStartupSounds
                 BgmVolume = Math.Round(BgmVolumeSlider.Value / 100.0, 2),
                 VoiceVolume = Math.Round(VoiceVolumeSlider.Value / 100.0, 2),
                 KillLockEngine = KillLockEngineCheckBox.IsChecked ?? false,
-                WaitForLockEngine = WaitForLockEngineCheckBox.IsChecked ?? false
+                WaitForLockEngine = WaitForLockEngineCheckBox.IsChecked ?? false,
+                LogToFile = LogToFileCheckBox.IsChecked ?? false
             };
 
             ConfigManager.SaveConfig(_config);
@@ -199,7 +201,8 @@ namespace BlueArchiveStartupSounds
                 BgmVolume = Math.Round(BgmVolumeSlider.Value / 100.0, 2),
                 VoiceVolume = Math.Round(VoiceVolumeSlider.Value / 100.0, 2),
                 KillLockEngine = false,
-                WaitForLockEngine = WaitForLockEngineCheckBox.IsChecked ?? false
+                WaitForLockEngine = WaitForLockEngineCheckBox.IsChecked ?? false,
+                LogToFile = LogToFileCheckBox.IsChecked ?? false
             };
 
             TestButton.Content = "播放中...";

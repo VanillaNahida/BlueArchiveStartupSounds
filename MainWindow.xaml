@@ -6,10 +6,10 @@
         xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
         mc:Ignorable="d"
-        Title="Blue Archive 开机音效配置" Height="610" Width="620"
+        Title="Blue Archive 开机音效配置" Height="626" Width="620"
         ResizeMode="CanMinimize"
         WindowStartupLocation="CenterScreen">
-    <DockPanel>
+    <DockPanel Margin="0,0,0,10">
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="文件">
                 <MenuItem Header="退出" Click="ExitMenuItem_Click"/>
@@ -18,7 +18,7 @@
                 <MenuItem Header="关于本程序" Click="AboutMenuItem_Click"/>
             </MenuItem>
         </Menu>
-        <Grid Margin="15,15,15,0" Height="552">
+        <Grid Margin="15,15,15,0" Height="554">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -142,6 +142,7 @@
                 <CheckBox x:Name="WaitForLockEngineCheckBox" Content="是否等待影片加载后播放音乐和语音（推荐勾选，这样背景视频和音乐会同步播放）" Margin="0,3"/>
                 <CheckBox x:Name="AutoStartVoiceCheckBox" Content="开机自动播放语音" Margin="0,3"/>
                 <CheckBox x:Name="AutoStartVideoCheckBox" Content="开机自动播放影片" Margin="0,3"/>
+                <CheckBox x:Name="LogToFileCheckBox" Content="记录运行日志到log文件（向开发者反馈需要开启，一般不用开）" Margin="0,3"/>
             </StackPanel>
         </GroupBox>
 

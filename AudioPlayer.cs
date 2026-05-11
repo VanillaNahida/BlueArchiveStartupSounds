@@ -16,6 +16,7 @@ namespace BlueArchiveStartupSounds
         private CancellationTokenSource? _cancellationTokenSource;
         private Task? _playTask;
         private bool _isPlaying;
+        private bool _logToFile;
         private readonly object _lockObject = new();
 
         public bool IsPlaying => _isPlaying;
@@ -30,6 +31,7 @@ namespace BlueArchiveStartupSounds
                 {
                     Stop();
                 }
+                _logToFile = config.LogToFile;
                 _cancellationTokenSource = new CancellationTokenSource();
                 _playTask = Task.Run(() => PlayWithConfigAsync(config, _cancellationTokenSource.Token), _cancellationTokenSource.Token);
             }
@@ -40,30 +42,34 @@ namespace BlueArchiveStartupSounds
             try
             {
                 _isPlaying = true;
+                LogMessage("播放任务开始");
 
-                var bgmPath = ResolvePath(config.BgmPath);
-                var voiceDir = ResolvePath(config.VoiceDir);
-                var aronaVoiceDir = ResolvePath(config.AronaVoiceDir);
-                var aronaEnterVoice = ResolvePath(config.AronaEnterVoice);
-                var aronaTtsVoice = ResolvePath(config.AronaTtsVoice);
+                var bgmPath = Path.GetFullPath(ResolvePath(config.BgmPath));
+                var voiceDir = Path.GetFullPath(ResolvePath(config.VoiceDir));
+                var aronaVoiceDir = Path.GetFullPath(ResolvePath(config.AronaVoiceDir));
+                var aronaEnterVoice = Path.GetFullPath(ResolvePath(config.AronaEnterVoice));
+                var aronaTtsVoice = Path.GetFullPath(ResolvePath(config.AronaTtsVoice));
 
-                // 如果配置了等待LockEngine启动，则等待
+                LogMessage($"配置信息 - BGM路径: {bgmPath}, 语音目录: {voiceDir}, Arona语音目录: {aronaVoiceDir}");
+                LogMessage($"配置信息 - 等待LockEngine: {config.WaitForLockEngine}, 关闭LockEngine: {config.KillLockEngine}");
+                LogMessage($"配置信息 - 延迟时间: {config.DelaySeconds}s, 淡入淡出时长: {config.FadeDuration}s");
+                LogMessage($"配置信息 - BGM音量: {config.BgmVolume}, 语音音量: {config.VoiceVolume}");
+
                 if (config.WaitForLockEngine)
                 {
-                    Console.WriteLine("等待LockEngine启动...");
+                    LogMessage("等待LockEngine启动...");
                     await WaitForLockEngineAsync(cancellationToken);
-                    Console.WriteLine("LockEngine已启动");
+                    LogMessage("LockEngine已启动");
                 }
 
-                // 初始化音频输出设备和混音器
+                LogMessage("初始化音频输出设备和混音器");
                 _outputDevice = new WaveOutEvent();
                 _mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
                 _mixer.ReadFully = true;
 
-                // 启动BGM播放
                 if (File.Exists(bgmPath))
                 {
-                    // 创建BGM读取器
+                    LogMessage($"启动BGM播放: {bgmPath}");
                     if (Path.GetExtension(bgmPath).ToLowerInvariant() == ".ogg")
                     {
                         _bgmReader = new VorbisWaveReader(bgmPath);
@@ -73,48 +79,47 @@ namespace BlueArchiveStartupSounds
                         _bgmReader = new AudioFileReader(bgmPath);
                     }
 
-                    // 创建BGM音量控制器
                     _bgmVolumeProvider = new VolumeSampleProvider(_bgmReader.ToSampleProvider());
-                    _bgmVolumeProvider.Volume = 0; // 初始音量为0
-
-                    // 创建BGM淡入淡出控制器
+                    _bgmVolumeProvider.Volume = 0;
                     _bgmProvider = new FadeInOutSampleProvider(_bgmVolumeProvider);
-
-                    // 将BGM添加到混音器
                     _mixer.AddMixerInput(_bgmProvider);
-
-                    // 初始化输出设备
                     _outputDevice.Init(_mixer);
                     _outputDevice.Play();
-
-                    // 淡入BGM
+                    LogMessage("BGM开始淡入");
                     await FadeBgmAsync(config.FadeDuration, config.BgmVolume, cancellationToken, true);
+                    LogMessage("BGM淡入完成");
                 }
                 else
                 {
-                    // 如果没有BGM，也要初始化输出设备
+                    LogMessage($"BGM文件不存在: {bgmPath}，跳过BGM播放");
                     _outputDevice.Init(_mixer);
                     _outputDevice.Play();
                 }
 
-                // 延时后播放标题语音
+                LogMessage($"等待 {config.DelaySeconds} 秒后播放标题语音");
                 await Task.Delay(TimeSpan.FromSeconds(config.DelaySeconds), cancellationToken);
 
                 var voiceFiles = GetVoiceFiles(voiceDir);
                 if (voiceFiles.Count > 0)
                 {
                     var selectedVoice = voiceFiles[Random.Shared.Next(voiceFiles.Count)];
-                    // 同时播放BGM和标题语音，标题语音不需要淡入淡出
                     await PlayVoiceAsync(selectedVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
+                    LogMessage("标题语音播放完成");
+                }
+                else
+                {
+                    LogMessage($"标题语音目录为空: {voiceDir}");
                 }
 
-                // 等待电脑解锁
+                LogMessage("等待电脑解锁");
                 await WaitForUnlockAsync(cancellationToken);
+                LogMessage("电脑已解锁");
 
-                // 淡出并停止BGM
                 if (_bgmProvider != null)
                 {
+                    LogMessage("BGM开始淡出");
                     await FadeBgmAsync(config.FadeDuration, config.BgmVolume, cancellationToken, false);
+                    LogMessage("BGM淡出完成，停止BGM播放");
                     _mixer?.RemoveMixerInput(_bgmProvider);
                     _bgmReader?.Dispose();
                     _bgmReader = null;
@@ -122,21 +127,22 @@ namespace BlueArchiveStartupSounds
                     _bgmVolumeProvider = null;
                 }
 
-                // 关闭LockEngine.exe
                 if (config.KillLockEngine)
                 {
+                    LogMessage("开始关闭LockEngine进程");
                     KillProcess("LockEngine.exe");
                 }
 
-                // 按顺序播放进入桌面的语音，进入桌面的语音不需要淡入淡出
                 if (File.Exists(aronaEnterVoice))
                 {
                     await PlayVoiceAsync(aronaEnterVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
+                    LogMessage("进入桌面语音播放完成");
                 }
 
                 if (File.Exists(aronaTtsVoice))
                 {
                     await PlayVoiceAsync(aronaTtsVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
+                    LogMessage("TTS语音播放完成");
                 }
 
                 var aronaVoiceFiles = GetVoiceFiles(aronaVoiceDir);
@@ -144,26 +150,30 @@ namespace BlueArchiveStartupSounds
                 {
                     var selectedAronaVoice = aronaVoiceFiles[Random.Shared.Next(aronaVoiceFiles.Count)];
                     await PlayVoiceAsync(selectedAronaVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
+                    LogMessage("Arona语音播放完成");
                 }
                 else
                 {
-                    // 调试：如果没有找到音频文件，输出目录路径
-                    Console.WriteLine($"No audio files found in directory: {aronaVoiceDir}");
+                    LogMessage($"Arona语音目录为空: {aronaVoiceDir}");
                 }
+
+                LogMessage("播放任务完成");
             }
             catch (OperationCanceledException)
             {
-                Console.WriteLine("播放任务已取消。");
+                LogMessage("播放任务已取消");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"播放任务异常: {ex}");
+                LogMessage($"播放任务异常: {ex}");
             }
             finally
             {
+                LogMessage("执行清理操作");
                 Cleanup();
                 _isPlaying = false;
                 PlaybackCompleted?.Invoke();
+                LogMessage("播放任务结束");
             }
         }
 
@@ -176,10 +186,9 @@ namespace BlueArchiveStartupSounds
 
             try
             {
-                // 调试：输出文件路径
-                Console.WriteLine($"Playing file: {filePath}");
+                var absolutePath = Path.GetFullPath(filePath);
+                LogMessage($"开始播放语音文件: {absolutePath}, 音量: {volume}, 淡入淡出: {useFade}, 时长: {fadeDuration}s");
                 
-                // 创建语音读取器
                 IWaveProvider waveReader;
                 if (Path.GetExtension(filePath).ToLowerInvariant() == ".ogg")
                 {
@@ -191,90 +200,80 @@ namespace BlueArchiveStartupSounds
                 }
 
                 var voiceReader = waveReader.ToSampleProvider();
+                var originalFormat = $"{voiceReader.WaveFormat.SampleRate}Hz {voiceReader.WaveFormat.Channels}ch";
                 
-                // 统一采样率和声道
                 if (voiceReader.WaveFormat.SampleRate != _mixer.WaveFormat.SampleRate || 
                     voiceReader.WaveFormat.Channels != _mixer.WaveFormat.Channels)
                 {
-                    Console.WriteLine($"Resampling: {voiceReader.WaveFormat.SampleRate}Hz {voiceReader.WaveFormat.Channels}ch to {_mixer.WaveFormat.SampleRate}Hz {_mixer.WaveFormat.Channels}ch");
-                    // 重采样
+                    LogMessage($"音频格式转换: {originalFormat} -> {_mixer.WaveFormat.SampleRate}Hz {_mixer.WaveFormat.Channels}ch");
                     voiceReader = new NAudio.Wave.SampleProviders.WdlResamplingSampleProvider(voiceReader, _mixer.WaveFormat.SampleRate);
-                    // 处理声道不匹配
                     if (voiceReader.WaveFormat.Channels == 1 && _mixer.WaveFormat.Channels == 2)
                     {
                         voiceReader = new NAudio.Wave.SampleProviders.MonoToStereoSampleProvider(voiceReader);
                     }
                 }
 
-                // 创建语音音量控制器
                 var voiceVolumeProvider = new VolumeSampleProvider(voiceReader)
                 {
-                    Volume = useFade ? 0 : (float)volume // 如果使用淡入，初始音量为0，否则直接设置目标音量
+                    Volume = useFade ? 0 : (float)volume
                 };
 
-                // 创建语音淡入淡出控制器
                 var voiceFadeProvider = new FadeInOutSampleProvider(voiceVolumeProvider);
-
-                // 将语音添加到混音器
                 _mixer.AddMixerInput(voiceFadeProvider);
-                Console.WriteLine("Added to mixer");
+                LogMessage("语音已添加到混音器");
 
                 if (useFade)
                 {
-                    // 淡入语音
-                    voiceFadeProvider.BeginFadeIn((int)(fadeDuration * 1000)); // 淡入时长
-
-                    // 同时设置目标音量
+                    LogMessage("开始语音淡入");
+                    voiceFadeProvider.BeginFadeIn((int)(fadeDuration * 1000));
                     var steps = 50;
                     var stepTime = fadeDuration / steps;
                     for (int i = 0; i <= steps; i++)
                     {
                         if (cancellationToken.IsCancellationRequested)
                             break;
-
                         var voiceVolume = (i / (double)steps) * volume;
                         voiceVolumeProvider.Volume = (float)voiceVolume;
                         await Task.Delay(TimeSpan.FromSeconds(stepTime), cancellationToken);
                     }
+                    LogMessage("语音淡入完成");
                 }
 
-                // 等待语音播放完成
                 var totalTime = GetAudioDuration(filePath);
                 if (totalTime.HasValue)
                 {
+                    LogMessage($"等待语音播放完成，时长: {totalTime.Value}");
                     await Task.Delay(totalTime.Value, cancellationToken);
                 }
                 else
                 {
-                    // 如果无法获取时长，等待一段时间
+                    LogMessage("无法获取音频时长，使用默认等待时间 3 秒");
                     await Task.Delay(3000, cancellationToken);
                 }
 
                 if (useFade)
                 {
-                    // 淡出语音
-                    voiceFadeProvider.BeginFadeOut((int)(fadeDuration * 1000)); // 淡出时长
-
-                    // 同时降低音量
+                    LogMessage("开始语音淡出");
+                    voiceFadeProvider.BeginFadeOut((int)(fadeDuration * 1000));
                     var steps = 50;
                     var stepTime = fadeDuration / steps;
                     for (int i = steps; i >= 0; i--)
                     {
                         if (cancellationToken.IsCancellationRequested)
                             break;
-
                         var voiceVolume = (i / (double)steps) * volume;
                         voiceVolumeProvider.Volume = (float)voiceVolume;
                         await Task.Delay(TimeSpan.FromSeconds(stepTime), cancellationToken);
                     }
+                    LogMessage("语音淡出完成");
                 }
 
-                // 从混音器中移除语音
                 _mixer.RemoveMixerInput(voiceFadeProvider);
+                LogMessage("语音已从混音器移除");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"播放语音失败: {ex.Message}");
+                LogMessage($"播放语音失败: {ex.Message}");
                 throw;
             }
         }
@@ -411,12 +410,12 @@ namespace BlueArchiveStartupSounds
         private void KillProcess(string processName)
         {
             string nameOnly = Path.GetFileNameWithoutExtension(processName);
-            Console.WriteLine($"开始尝试关闭进程: {processName}");
+            LogMessage($"开始尝试关闭进程: {processName}");
 
             var initialProcesses = Process.GetProcessesByName(nameOnly);
             if (initialProcesses.Length == 0)
             {
-                Console.WriteLine($"未找到进程: {nameOnly}");
+                LogMessage($"未找到进程: {nameOnly}");
                 return;
             }
 
@@ -426,39 +425,39 @@ namespace BlueArchiveStartupSounds
                 {
                     try
                     {
-                        Console.WriteLine($"原生Kill尝试: {p.ProcessName} (PID: {p.Id})");
+                        LogMessage($"原生Kill尝试: {p.ProcessName} (PID: {p.Id})");
                         p.Kill(entireProcessTree: true);
                         var exited = p.WaitForExit(3000);
-                        Console.WriteLine(exited
+                        LogMessage(exited
                             ? $"原生Kill成功: PID {p.Id}"
                             : $"原生Kill超时: PID {p.Id}");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"原生Kill失败: PID {p.Id}, 错误: {ex.Message}");
+                        LogMessage($"原生Kill失败: PID {p.Id}, 错误: {ex.Message}");
                     }
                 }
 
                 // 原生Kill后再次校验，如仍存在则使用taskkill兜底
                 if (Process.GetProcessesByName(nameOnly).Length > 0)
                 {
-                    Console.WriteLine($"原生Kill后仍存在 {nameOnly}，执行taskkill兜底");
+                    LogMessage($"原生Kill后仍存在 {nameOnly}，执行taskkill兜底");
                     RunTaskKill(processName);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"KillProcess流程异常: {ex.Message}");
+                LogMessage($"KillProcess流程异常: {ex.Message}");
             }
 
             var remaining = Process.GetProcessesByName(nameOnly);
             if (remaining.Length == 0)
             {
-                Console.WriteLine($"进程已成功关闭: {nameOnly}");
+                LogMessage($"进程已成功关闭: {nameOnly}");
             }
             else
             {
-                Console.WriteLine($"进程仍在运行: {nameOnly}, 数量: {remaining.Length}");
+                LogMessage($"进程仍在运行: {nameOnly}, 数量: {remaining.Length}");
             }
         }
 
@@ -469,7 +468,7 @@ namespace BlueArchiveStartupSounds
                 var imageName = processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
                     ? processName
                     : $"{Path.GetFileNameWithoutExtension(processName)}.exe";
-                Console.WriteLine($"尝试使用taskkill命令关闭进程: {imageName}");
+                LogMessage($"尝试使用taskkill命令关闭进程: {imageName}");
                 
                 var psi = new ProcessStartInfo
                 {
@@ -491,42 +490,44 @@ namespace BlueArchiveStartupSounds
                 
                 if (process?.ExitCode == 0)
                 {
-                    Console.WriteLine($"taskkill成功关闭进程: {imageName}");
+                    LogMessage($"taskkill成功关闭进程: {imageName}");
                     if (!string.IsNullOrEmpty(output))
                     {
-                        Console.WriteLine($"taskkill输出: {output.Trim()}");
+                        LogMessage($"taskkill输出: {output.Trim()}");
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"taskkill关闭进程失败，退出代码: {process?.ExitCode}");
+                    LogMessage($"taskkill关闭进程失败，退出代码: {process?.ExitCode}");
                     if (!string.IsNullOrEmpty(error))
                     {
-                        Console.WriteLine($"taskkill错误: {error.Trim()}");
+                        LogMessage($"taskkill错误: {error.Trim()}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"执行taskkill命令时出错: {ex.Message}");
+                LogMessage($"执行taskkill命令时出错: {ex.Message}");
             }
         }
 
-        // private void LogMessage(string message)
-        // {
-        //     var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}";
-        //     Debug.WriteLine(line);
-        //     Console.WriteLine(line);
-        //     try
-        //     {
-        //         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BlueArchiveStartupSounds.log");
-        //         File.AppendAllText(logPath, line + Environment.NewLine);
-        //     }
-        //     catch
-        //     {
-        //         // 日志写入失败不影响主流程
-        //     }
-        // }
+        private void LogMessage(string message)
+        {
+            var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}";
+            Debug.WriteLine(line);
+            Console.WriteLine(line);
+            if (_logToFile)
+            {
+                try
+                {
+                    var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BlueArchiveStartupSounds.log");
+                    File.AppendAllText(logPath, line + Environment.NewLine);
+                }
+                catch
+                {
+                }
+            }
+        }
 
         private async Task WaitForLockEngineAsync(CancellationToken cancellationToken)
         {
