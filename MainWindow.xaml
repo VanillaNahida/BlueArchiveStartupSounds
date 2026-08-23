@@ -6,7 +6,8 @@
         xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
         mc:Ignorable="d"
-        Title="Blue Archive 开机音效配置" Height="626" Width="620"
+        Title="Blue Archive 开机音效配置" Width="620"
+        SizeToContent="Height"
         ResizeMode="CanMinimize"
         WindowStartupLocation="CenterScreen">
     <DockPanel Margin="0,0,0,10">
@@ -18,7 +19,8 @@
                 <MenuItem Header="关于本程序" Click="AboutMenuItem_Click"/>
             </MenuItem>
         </Menu>
-        <Grid Margin="15,15,15,0" Height="554">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="True">
+        <Grid Margin="15,15,15,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -151,5 +153,6 @@
             <Button x:Name="TestButton" Content="测试播放" Width="100" Height="30" Click="TestPlay"/>
         </StackPanel>
     </Grid>
+    </ScrollViewer>
     </DockPanel>
 </Window>

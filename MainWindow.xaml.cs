@@ -14,6 +14,8 @@ namespace BlueArchiveStartupSounds
         public MainWindow()
         {
             InitializeComponent();
+            // 限制窗口最大高度不超过屏幕工作区，避免在高 DPI 缩放下窗口超出屏幕导致下方按钮显示不全
+            MaxHeight = SystemParameters.WorkArea.Height - 20;
             _config = ConfigManager.LoadConfig();
             _audioPlayer = new AudioPlayer();
             _audioPlayer.PlaybackCompleted += OnPlaybackCompleted;
@@ -23,10 +25,10 @@ namespace BlueArchiveStartupSounds
 
         private void CheckLockEngineFolder()
         {
-            var workDir = AppDomain.CurrentDomain.BaseDirectory;
+            var workDir = GetApplicationDirectory();
             var lockEngineFolder = Path.Combine(workDir, "LockEngine");
             var lockEngineExe = Path.Combine(lockEngineFolder, "LockEngine.exe");
-            
+
             if (!Directory.Exists(lockEngineFolder))
             {
                 MessageBox.Show("未检测到 LockEngine 文件夹，开机自动播放影片功能不可用。\n\n如需使用此功能，请确保 LockEngine 文件夹存在于程序目录下。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -37,6 +39,21 @@ namespace BlueArchiveStartupSounds
                 MessageBox.Show("未检测到 LockEngine.exe 文件，开机自动播放影片功能不可用。\n\n如需使用此功能，请确保 LockEngine.exe 存在于 LockEngine 文件夹中。", "警告", MessageBoxButton.OK, MessageBoxImage.Warning);
                 AutoStartVideoCheckBox.IsEnabled = false;
             }
+        }
+
+        /// <summary>
+        /// 获取应用程序实际所在目录。
+        /// 单文件发布时 AppDomain.CurrentDomain.BaseDirectory 可能指向临时解压目录，
+        /// 改用 Environment.ProcessPath 获取真实 exe 路径。
+        /// </summary>
+        private static string GetApplicationDirectory()
+        {
+            var exePath = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exePath))
+            {
+                return Path.GetDirectoryName(exePath) ?? AppDomain.CurrentDomain.BaseDirectory;
+            }
+            return AppDomain.CurrentDomain.BaseDirectory;
         }
 
         private void LoadConfigToUi()
@@ -149,7 +166,7 @@ namespace BlueArchiveStartupSounds
 
             ConfigManager.SaveConfig(_config);
 
-            var workDir = AppDomain.CurrentDomain.BaseDirectory;
+            var workDir = GetApplicationDirectory();
 
             if (AutoStartVoiceCheckBox.IsChecked == true)
             {

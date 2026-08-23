@@ -363,7 +363,22 @@ namespace BlueArchiveStartupSounds
             {
                 return path;
             }
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, path);
+            return Path.Combine(GetApplicationDirectory(), path);
+        }
+
+        /// <summary>
+        /// 获取应用程序实际所在目录。
+        /// 单文件发布时 AppDomain.CurrentDomain.BaseDirectory 可能指向临时解压目录，
+        /// 改用 Environment.ProcessPath 获取真实 exe 路径。
+        /// </summary>
+        private static string GetApplicationDirectory()
+        {
+            var exePath = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exePath))
+            {
+                return Path.GetDirectoryName(exePath) ?? AppDomain.CurrentDomain.BaseDirectory;
+            }
+            return AppDomain.CurrentDomain.BaseDirectory;
         }
 
         private List<string> GetVoiceFiles(string directory)
@@ -520,7 +535,7 @@ namespace BlueArchiveStartupSounds
             {
                 try
                 {
-                    var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BlueArchiveStartupSounds.log");
+                    var logPath = Path.Combine(GetApplicationDirectory(), "BlueArchiveStartupSounds.log");
                     File.AppendAllText(logPath, line + Environment.NewLine);
                 }
                 catch

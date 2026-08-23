@@ -16,7 +16,22 @@ namespace BlueArchiveStartupSounds
 
         private static string GetConfigPath()
         {
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ConfigFileName);
+            return Path.Combine(GetApplicationDirectory(), ConfigFileName);
+        }
+
+        /// <summary>
+        /// 获取应用程序实际所在目录。
+        /// 单文件发布时 AppDomain.CurrentDomain.BaseDirectory 可能指向临时解压目录，
+        /// 改用 Environment.ProcessPath 获取真实 exe 路径。
+        /// </summary>
+        private static string GetApplicationDirectory()
+        {
+            var exePath = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exePath))
+            {
+                return Path.GetDirectoryName(exePath) ?? AppDomain.CurrentDomain.BaseDirectory;
+            }
+            return AppDomain.CurrentDomain.BaseDirectory;
         }
 
         public static AppConfig LoadConfig()
