@@ -40,6 +40,10 @@ namespace BlueArchiveStartupSounds
         [JsonPropertyName("log_to_file")]
         public bool LogToFile { get; set; } = false;
 
+        // 音频输出设备名称，为空表示使用系统默认输出设备
+        [JsonPropertyName("output_device")]
+        public string OutputDevice { get; set; } = "";
+
         public static AppConfig GetDefault()
         {
             return new AppConfig();
@@ -60,7 +64,8 @@ namespace BlueArchiveStartupSounds
                 VoiceVolume = VoiceVolume,
                 KillLockEngine = KillLockEngine,
                 WaitForLockEngine = WaitForLockEngine,
-                LogToFile = LogToFile
+                LogToFile = LogToFile,
+                OutputDevice = OutputDevice
             };
         }
     }

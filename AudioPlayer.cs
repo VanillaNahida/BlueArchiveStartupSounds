@@ -23,6 +23,58 @@ namespace BlueArchiveStartupSounds
 
         public event Action? PlaybackCompleted;
 
+        /// <summary>
+        /// 枚举当前系统可用的音频输出设备名称。
+        /// 返回的列表顺序即 NAudio 的设备编号顺序。
+        /// </summary>
+        public static List<string> GetOutputDevices()
+        {
+            var devices = new List<string>();
+            try
+            {
+                var count = WaveOut.DeviceCount;
+                for (var i = 0; i < count; i++)
+                {
+                    var caps = WaveOut.GetCapabilities(i);
+                    var name = caps.ProductName.TrimEnd('\0', ' ').Trim();
+                    devices.Add(string.IsNullOrEmpty(name) ? $"设备 {i}" : name);
+                }
+            }
+            catch
+            {
+                // 设备枚举失败时返回空列表
+            }
+            return devices;
+        }
+
+        /// <summary>
+        /// 根据设备名称解析 NAudio 设备编号，找不到或名称为空时返回 -1（使用系统默认设备）。
+        /// </summary>
+        private static int ResolveDeviceNumber(string deviceName)
+        {
+            if (string.IsNullOrWhiteSpace(deviceName))
+            {
+                return -1;
+            }
+            try
+            {
+                var count = WaveOut.DeviceCount;
+                for (var i = 0; i < count; i++)
+                {
+                    var caps = WaveOut.GetCapabilities(i);
+                    var name = caps.ProductName.TrimEnd('\0', ' ').Trim();
+                    if (string.Equals(name, deviceName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return i;
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return -1;
+        }
+
         public void PlayWithConfig(AppConfig config)
         {
             lock (_lockObject)
@@ -64,6 +116,18 @@ namespace BlueArchiveStartupSounds
 
                 LogMessage("初始化音频输出设备和混音器");
                 _outputDevice = new WaveOutEvent();
+                var deviceNumber = ResolveDeviceNumber(config.OutputDevice);
+                if (deviceNumber >= 0)
+                {
+                    _outputDevice.DeviceNumber = deviceNumber;
+                    LogMessage($"使用指定输出设备: {config.OutputDevice} (设备编号 {deviceNumber})");
+                }
+                else
+                {
+                    LogMessage(string.IsNullOrEmpty(config.OutputDevice)
+                        ? "使用系统默认输出设备"
+                        : $"未找到指定输出设备: {config.OutputDevice}，回退到系统默认输出设备");
+                }
                 _mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
                 _mixer.ReadFully = true;
 
@@ -79,7 +143,20 @@ namespace BlueArchiveStartupSounds
                         _bgmReader = new AudioFileReader(bgmPath);
                     }
 
-                    _bgmVolumeProvider = new VolumeSampleProvider(_bgmReader.ToSampleProvider());
+                    var bgmSample = _bgmReader.ToSampleProvider();
+                    var bgmMixerFormat = _mixer.WaveFormat;
+                    // 混音器固定为 44.1kHz 双声道，若 BGM 采样率或声道数不一致需先转换，否则 AddMixerInput 会抛异常
+                    if (bgmSample.WaveFormat.SampleRate != bgmMixerFormat.SampleRate ||
+                        bgmSample.WaveFormat.Channels != bgmMixerFormat.Channels)
+                    {
+                        LogMessage($"BGM音频格式转换: {bgmSample.WaveFormat.SampleRate}Hz {bgmSample.WaveFormat.Channels}ch -> {bgmMixerFormat.SampleRate}Hz {bgmMixerFormat.Channels}ch");
+                        bgmSample = new WdlResamplingSampleProvider(bgmSample, bgmMixerFormat.SampleRate);
+                        if (bgmSample.WaveFormat.Channels == 1 && bgmMixerFormat.Channels == 2)
+                        {
+                            bgmSample = new MonoToStereoSampleProvider(bgmSample);
+                        }
+                    }
+                    _bgmVolumeProvider = new VolumeSampleProvider(bgmSample);
                     _bgmVolumeProvider.Volume = 0;
                     _bgmProvider = new FadeInOutSampleProvider(_bgmVolumeProvider);
                     _mixer.AddMixerInput(_bgmProvider);

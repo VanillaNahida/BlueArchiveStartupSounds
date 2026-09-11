@@ -10,6 +10,7 @@ namespace BlueArchiveStartupSounds
     {
         private AppConfig _config;
         private AudioPlayer _audioPlayer;
+        private const string DefaultOutputDeviceText = "(系统默认设备)";
 
         public MainWindow()
         {
@@ -75,6 +76,62 @@ namespace BlueArchiveStartupSounds
             LogToFileCheckBox.IsChecked = _config.LogToFile;
             AutoStartVoiceCheckBox.IsChecked = ConfigManager.TaskExists(ConfigManager.TaskName);
             AutoStartVideoCheckBox.IsChecked = ConfigManager.RegistryRunExists(ConfigManager.RegValueName);
+
+            LoadOutputDevicesIntoCombo(_config.OutputDevice);
+        }
+
+        /// <summary>
+        /// 将系统可用音频输出设备填入下拉列表，并选中配置中保存的设备。
+        /// </summary>
+        private void LoadOutputDevicesIntoCombo(string preferredDevice)
+        {
+            var devices = new List<string> { DefaultOutputDeviceText };
+            foreach (var device in AudioPlayer.GetOutputDevices())
+            {
+                if (!devices.Contains(device, StringComparer.OrdinalIgnoreCase))
+                {
+                    devices.Add(device);
+                }
+            }
+
+            // 若保存的设备名当前不在枚举列表中（例如声卡状态变化），仍加入列表以便用户查看并重新选择
+            if (!string.IsNullOrEmpty(preferredDevice) &&
+                !devices.Contains(preferredDevice, StringComparer.OrdinalIgnoreCase))
+            {
+                devices.Add(preferredDevice);
+            }
+
+            OutputDeviceComboBox.ItemsSource = devices;
+
+            if (string.IsNullOrEmpty(preferredDevice))
+            {
+                OutputDeviceComboBox.SelectedIndex = 0;
+            }
+            else
+            {
+                var index = devices.FindIndex(d => d.Equals(preferredDevice, StringComparison.OrdinalIgnoreCase));
+                OutputDeviceComboBox.SelectedIndex = index >= 0 ? index : 0;
+            }
+        }
+
+        /// <summary>
+        /// 获取下拉列表中当前选中的设备名；选择默认项时返回空字符串。
+        /// </summary>
+        private string GetSelectedOutputDevice()
+        {
+            var selected = OutputDeviceComboBox.SelectedItem as string;
+            if (string.IsNullOrEmpty(selected) ||
+                string.Equals(selected, DefaultOutputDeviceText, StringComparison.Ordinal))
+            {
+                return "";
+            }
+            return selected;
+        }
+
+        private void RefreshOutputDevices(object sender, RoutedEventArgs e)
+        {
+            var current = GetSelectedOutputDevice();
+            LoadOutputDevicesIntoCombo(current);
         }
 
         private void BgmVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -161,7 +218,8 @@ namespace BlueArchiveStartupSounds
                 VoiceVolume = Math.Round(VoiceVolumeSlider.Value / 100.0, 2),
                 KillLockEngine = KillLockEngineCheckBox.IsChecked ?? false,
                 WaitForLockEngine = WaitForLockEngineCheckBox.IsChecked ?? false,
-                LogToFile = LogToFileCheckBox.IsChecked ?? false
+                LogToFile = LogToFileCheckBox.IsChecked ?? false,
+                OutputDevice = GetSelectedOutputDevice()
             };
 
             ConfigManager.SaveConfig(_config);
@@ -219,7 +277,8 @@ namespace BlueArchiveStartupSounds
                 VoiceVolume = Math.Round(VoiceVolumeSlider.Value / 100.0, 2),
                 KillLockEngine = false,
                 WaitForLockEngine = WaitForLockEngineCheckBox.IsChecked ?? false,
-                LogToFile = LogToFileCheckBox.IsChecked ?? false
+                LogToFile = LogToFileCheckBox.IsChecked ?? false,
+                OutputDevice = GetSelectedOutputDevice()
             };
 
             TestButton.Content = "播放中...";

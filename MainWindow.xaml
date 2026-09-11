@@ -81,6 +81,17 @@
                     <TextBox x:Name="AronaTtsTextBox" Grid.Column="1" Margin="5,0"/>
                     <Button Content="浏览..." Grid.Column="2" Click="BrowseAronaTtsFile" Width="70" HorizontalAlignment="Right"/>
                 </Grid>
+                <Grid Margin="0,3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="80"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="输出设备:" VerticalAlignment="Center" ToolTip="选择音频输出声卡，默认使用系统默认设备"/>
+                    <ComboBox x:Name="OutputDeviceComboBox" Grid.Column="1" Margin="5,0" VerticalAlignment="Center"
+                              ToolTip="选择用于播放的声卡；若多块声卡或默认设备无声，可在此指定"/>
+                    <Button Content="刷新" Grid.Column="2" Click="RefreshOutputDevices" Width="70" HorizontalAlignment="Right"/>
+                </Grid>
             </StackPanel>
         </GroupBox>
 
