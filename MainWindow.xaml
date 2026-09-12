@@ -156,6 +156,8 @@
                 <CheckBox x:Name="AutoStartVoiceCheckBox" Content="开机自动播放语音" Margin="0,3"/>
                 <CheckBox x:Name="AutoStartVideoCheckBox" Content="开机自动播放影片" Margin="0,3"/>
                 <CheckBox x:Name="LogToFileCheckBox" Content="记录运行日志到log文件（向开发者反馈需要开启，一般不用开）" Margin="0,3"/>
+                <CheckBox x:Name="EnableLoginMusicCheckBox" Content="启用登录界面音乐" Margin="0,3"/>
+                <CheckBox x:Name="EnableDesktopVoiceCheckBox" Content="启用进入桌面语音" Margin="0,3"/>
             </StackPanel>
         </GroupBox>
 

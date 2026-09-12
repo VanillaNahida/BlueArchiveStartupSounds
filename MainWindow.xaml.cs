@@ -74,6 +74,8 @@ namespace BlueArchiveStartupSounds
             KillLockEngineCheckBox.IsChecked = _config.KillLockEngine;
             WaitForLockEngineCheckBox.IsChecked = _config.WaitForLockEngine;
             LogToFileCheckBox.IsChecked = _config.LogToFile;
+            EnableLoginMusicCheckBox.IsChecked = _config.EnableLoginMusic;
+            EnableDesktopVoiceCheckBox.IsChecked = _config.EnableDesktopVoice;
             AutoStartVoiceCheckBox.IsChecked = ConfigManager.TaskExists(ConfigManager.TaskName);
             AutoStartVideoCheckBox.IsChecked = ConfigManager.RegistryRunExists(ConfigManager.RegValueName);
 
@@ -219,6 +221,8 @@ namespace BlueArchiveStartupSounds
                 KillLockEngine = KillLockEngineCheckBox.IsChecked ?? false,
                 WaitForLockEngine = WaitForLockEngineCheckBox.IsChecked ?? false,
                 LogToFile = LogToFileCheckBox.IsChecked ?? false,
+                EnableLoginMusic = EnableLoginMusicCheckBox.IsChecked ?? true,
+                EnableDesktopVoice = EnableDesktopVoiceCheckBox.IsChecked ?? true,
                 OutputDevice = GetSelectedOutputDevice()
             };
 
@@ -278,6 +282,8 @@ namespace BlueArchiveStartupSounds
                 KillLockEngine = false,
                 WaitForLockEngine = WaitForLockEngineCheckBox.IsChecked ?? false,
                 LogToFile = LogToFileCheckBox.IsChecked ?? false,
+                EnableLoginMusic = EnableLoginMusicCheckBox.IsChecked ?? true,
+                EnableDesktopVoice = EnableDesktopVoiceCheckBox.IsChecked ?? true,
                 OutputDevice = GetSelectedOutputDevice()
             };
 
