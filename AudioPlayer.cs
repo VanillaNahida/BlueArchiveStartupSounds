@@ -131,61 +131,71 @@ namespace BlueArchiveStartupSounds
                 _mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(44100, 2));
                 _mixer.ReadFully = true;
 
-                if (File.Exists(bgmPath))
+                if (config.EnableLoginMusic)
                 {
-                    LogMessage($"启动BGM播放: {bgmPath}");
-                    if (Path.GetExtension(bgmPath).ToLowerInvariant() == ".ogg")
+                    if (File.Exists(bgmPath))
                     {
-                        _bgmReader = new VorbisWaveReader(bgmPath);
+                        LogMessage($"启动BGM播放: {bgmPath}");
+                        if (Path.GetExtension(bgmPath).ToLowerInvariant() == ".ogg")
+                        {
+                            _bgmReader = new VorbisWaveReader(bgmPath);
+                        }
+                        else
+                        {
+                            _bgmReader = new AudioFileReader(bgmPath);
+                        }
+
+                        var bgmSample = _bgmReader.ToSampleProvider();
+                        var bgmMixerFormat = _mixer.WaveFormat;
+                        // 混音器固定为 44.1kHz 双声道，若 BGM 采样率或声道数不一致需先转换，否则 AddMixerInput 会抛异常
+                        if (bgmSample.WaveFormat.SampleRate != bgmMixerFormat.SampleRate ||
+                            bgmSample.WaveFormat.Channels != bgmMixerFormat.Channels)
+                        {
+                            LogMessage($"BGM音频格式转换: {bgmSample.WaveFormat.SampleRate}Hz {bgmSample.WaveFormat.Channels}ch -> {bgmMixerFormat.SampleRate}Hz {bgmMixerFormat.Channels}ch");
+                            bgmSample = new WdlResamplingSampleProvider(bgmSample, bgmMixerFormat.SampleRate);
+                            if (bgmSample.WaveFormat.Channels == 1 && bgmMixerFormat.Channels == 2)
+                            {
+                                bgmSample = new MonoToStereoSampleProvider(bgmSample);
+                            }
+                        }
+
+                        _bgmVolumeProvider = new VolumeSampleProvider(bgmSample);
+                        _bgmVolumeProvider.Volume = 0;
+                        _bgmProvider = new FadeInOutSampleProvider(_bgmVolumeProvider);
+                        _mixer.AddMixerInput(_bgmProvider);
+                        _outputDevice.Init(_mixer);
+                        _outputDevice.Play();
+                        LogMessage("BGM开始淡入");
+                        await FadeBgmAsync(config.FadeDuration, config.BgmVolume, cancellationToken, true);
+                        LogMessage("BGM淡入完成");
                     }
                     else
                     {
-                        _bgmReader = new AudioFileReader(bgmPath);
+                        LogMessage($"BGM文件不存在: {bgmPath}，跳过BGM播放");
+                        _outputDevice.Init(_mixer);
+                        _outputDevice.Play();
                     }
 
-                    var bgmSample = _bgmReader.ToSampleProvider();
-                    var bgmMixerFormat = _mixer.WaveFormat;
-                    // 混音器固定为 44.1kHz 双声道，若 BGM 采样率或声道数不一致需先转换，否则 AddMixerInput 会抛异常
-                    if (bgmSample.WaveFormat.SampleRate != bgmMixerFormat.SampleRate ||
-                        bgmSample.WaveFormat.Channels != bgmMixerFormat.Channels)
+                    LogMessage($"等待 {config.DelaySeconds} 秒后播放标题语音");
+                    await Task.Delay(TimeSpan.FromSeconds(config.DelaySeconds), cancellationToken);
+
+                    var voiceFiles = GetVoiceFiles(voiceDir);
+                    if (voiceFiles.Count > 0)
                     {
-                        LogMessage($"BGM音频格式转换: {bgmSample.WaveFormat.SampleRate}Hz {bgmSample.WaveFormat.Channels}ch -> {bgmMixerFormat.SampleRate}Hz {bgmMixerFormat.Channels}ch");
-                        bgmSample = new WdlResamplingSampleProvider(bgmSample, bgmMixerFormat.SampleRate);
-                        if (bgmSample.WaveFormat.Channels == 1 && bgmMixerFormat.Channels == 2)
-                        {
-                            bgmSample = new MonoToStereoSampleProvider(bgmSample);
-                        }
+                        var selectedVoice = voiceFiles[Random.Shared.Next(voiceFiles.Count)];
+                        await PlayVoiceAsync(selectedVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
+                        LogMessage("标题语音播放完成");
                     }
-                    _bgmVolumeProvider = new VolumeSampleProvider(bgmSample);
-                    _bgmVolumeProvider.Volume = 0;
-                    _bgmProvider = new FadeInOutSampleProvider(_bgmVolumeProvider);
-                    _mixer.AddMixerInput(_bgmProvider);
-                    _outputDevice.Init(_mixer);
-                    _outputDevice.Play();
-                    LogMessage("BGM开始淡入");
-                    await FadeBgmAsync(config.FadeDuration, config.BgmVolume, cancellationToken, true);
-                    LogMessage("BGM淡入完成");
+                    else
+                    {
+                        LogMessage($"标题语音目录为空: {voiceDir}");
+                    }
                 }
                 else
                 {
-                    LogMessage($"BGM文件不存在: {bgmPath}，跳过BGM播放");
+                    LogMessage("登录界面音乐已关闭，跳过BGM和标题语音播放");
                     _outputDevice.Init(_mixer);
                     _outputDevice.Play();
-                }
-
-                LogMessage($"等待 {config.DelaySeconds} 秒后播放标题语音");
-                await Task.Delay(TimeSpan.FromSeconds(config.DelaySeconds), cancellationToken);
-
-                var voiceFiles = GetVoiceFiles(voiceDir);
-                if (voiceFiles.Count > 0)
-                {
-                    var selectedVoice = voiceFiles[Random.Shared.Next(voiceFiles.Count)];
-                    await PlayVoiceAsync(selectedVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
-                    LogMessage("标题语音播放完成");
-                }
-                else
-                {
-                    LogMessage($"标题语音目录为空: {voiceDir}");
                 }
 
                 LogMessage("等待电脑解锁");
@@ -210,28 +220,35 @@ namespace BlueArchiveStartupSounds
                     KillProcess("LockEngine.exe");
                 }
 
-                if (File.Exists(aronaEnterVoice))
+                if (config.EnableDesktopVoice)
                 {
-                    await PlayVoiceAsync(aronaEnterVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
-                    LogMessage("进入桌面语音播放完成");
-                }
+                    if (File.Exists(aronaEnterVoice))
+                    {
+                        await PlayVoiceAsync(aronaEnterVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
+                        LogMessage("进入桌面语音播放完成");
+                    }
 
-                if (File.Exists(aronaTtsVoice))
-                {
-                    await PlayVoiceAsync(aronaTtsVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
-                    LogMessage("TTS语音播放完成");
-                }
+                    if (File.Exists(aronaTtsVoice))
+                    {
+                        await PlayVoiceAsync(aronaTtsVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
+                        LogMessage("TTS语音播放完成");
+                    }
 
-                var aronaVoiceFiles = GetVoiceFiles(aronaVoiceDir);
-                if (aronaVoiceFiles.Count > 0)
-                {
-                    var selectedAronaVoice = aronaVoiceFiles[Random.Shared.Next(aronaVoiceFiles.Count)];
-                    await PlayVoiceAsync(selectedAronaVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
-                    LogMessage("Arona语音播放完成");
+                    var aronaVoiceFiles = GetVoiceFiles(aronaVoiceDir);
+                    if (aronaVoiceFiles.Count > 0)
+                    {
+                        var selectedAronaVoice = aronaVoiceFiles[Random.Shared.Next(aronaVoiceFiles.Count)];
+                        await PlayVoiceAsync(selectedAronaVoice, config.VoiceVolume, false, config.FadeDuration, cancellationToken);
+                        LogMessage("Arona语音播放完成");
+                    }
+                    else
+                    {
+                        LogMessage($"Arona语音目录为空: {aronaVoiceDir}");
+                    }
                 }
                 else
                 {
-                    LogMessage($"Arona语音目录为空: {aronaVoiceDir}");
+                    LogMessage("进入桌面语音已关闭，跳过Arona语音播放");
                 }
 
                 LogMessage("播放任务完成");
@@ -265,7 +282,7 @@ namespace BlueArchiveStartupSounds
             {
                 var absolutePath = Path.GetFullPath(filePath);
                 LogMessage($"开始播放语音文件: {absolutePath}, 音量: {volume}, 淡入淡出: {useFade}, 时长: {fadeDuration}s");
-                
+
                 IWaveProvider waveReader;
                 if (Path.GetExtension(filePath).ToLowerInvariant() == ".ogg")
                 {
@@ -278,8 +295,8 @@ namespace BlueArchiveStartupSounds
 
                 var voiceReader = waveReader.ToSampleProvider();
                 var originalFormat = $"{voiceReader.WaveFormat.SampleRate}Hz {voiceReader.WaveFormat.Channels}ch";
-                
-                if (voiceReader.WaveFormat.SampleRate != _mixer.WaveFormat.SampleRate || 
+
+                if (voiceReader.WaveFormat.SampleRate != _mixer.WaveFormat.SampleRate ||
                     voiceReader.WaveFormat.Channels != _mixer.WaveFormat.Channels)
                 {
                     LogMessage($"音频格式转换: {originalFormat} -> {_mixer.WaveFormat.SampleRate}Hz {_mixer.WaveFormat.Channels}ch");
@@ -561,7 +578,7 @@ namespace BlueArchiveStartupSounds
                     ? processName
                     : $"{Path.GetFileNameWithoutExtension(processName)}.exe";
                 LogMessage($"尝试使用taskkill命令关闭进程: {imageName}");
-                
+
                 var psi = new ProcessStartInfo
                 {
                     // 使用绝对路径避免重定向问题
@@ -573,13 +590,13 @@ namespace BlueArchiveStartupSounds
                     RedirectStandardError = true,
                     CreateNoWindow = true
                 };
-                
+
                 using var process = Process.Start(psi);
                 process?.WaitForExit(5000);
-                
+
                 var output = process?.StandardOutput.ReadToEnd();
                 var error = process?.StandardError.ReadToEnd();
-                
+
                 if (process?.ExitCode == 0)
                 {
                     LogMessage($"taskkill成功关闭进程: {imageName}");

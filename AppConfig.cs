@@ -31,6 +31,12 @@ namespace BlueArchiveStartupSounds
         [JsonPropertyName("voice_volume")]
         public double VoiceVolume { get; set; } = 1.0;
 
+        [JsonPropertyName("enable_login_music")]
+        public bool EnableLoginMusic { get; set; } = true;
+
+        [JsonPropertyName("enable_desktop_voice")]
+        public bool EnableDesktopVoice { get; set; } = true;
+
         [JsonPropertyName("kill_lock_engine")]
         public bool KillLockEngine { get; set; } = false;
 
@@ -62,6 +68,8 @@ namespace BlueArchiveStartupSounds
                 FadeDuration = FadeDuration,
                 BgmVolume = BgmVolume,
                 VoiceVolume = VoiceVolume,
+                EnableLoginMusic = EnableLoginMusic,
+                EnableDesktopVoice = EnableDesktopVoice,
                 KillLockEngine = KillLockEngine,
                 WaitForLockEngine = WaitForLockEngine,
                 LogToFile = LogToFile,
