@@ -15,13 +15,28 @@ namespace BlueArchiveStartupSounds
         public MainWindow()
         {
             InitializeComponent();
-            // 限制窗口最大高度不超过屏幕工作区，避免在高 DPI 缩放下窗口超出屏幕导致下方按钮显示不全
-            MaxHeight = SystemParameters.WorkArea.Height - 20;
+            // 初始高度按内容自适应，但不超过屏幕工作区；超出部分由 ScrollViewer 滚动显示，
+            // 避免在高 DPI 缩放或小分辨率下窗口超出屏幕导致下方按钮看不到
+            MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 20);
+            // 首次布局完成后改为手动尺寸：窗口不再被内容高度锁死，用户可以缩小窗口，
+            // 内容显示不全时即可通过 ScrollViewer 上下滚动查看
+            Loaded += OnFirstLoaded;
             _config = ConfigManager.LoadConfig();
             _audioPlayer = new AudioPlayer();
             _audioPlayer.PlaybackCompleted += OnPlaybackCompleted;
             LoadConfigToUi();
             CheckLockEngineFolder();
+        }
+
+        /// <summary>
+        /// 首次显示后把窗口从“按内容自适应高度”切换为可自由调整大小，
+        /// 使窗口可以被缩小，内容显示不全时由 ScrollViewer 上下滚动；
+        /// 切换时保持当前尺寸不变，不把高度固定为具体数值。
+        /// </summary>
+        private void OnFirstLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnFirstLoaded;
+            SizeToContent = SizeToContent.Manual;
         }
 
         private void CheckLockEngineFolder()
